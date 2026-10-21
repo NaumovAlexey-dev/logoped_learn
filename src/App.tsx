@@ -3,8 +3,10 @@ import type { Mode, Screen, TutorialResult } from './types'
 import { case01 } from './data/case01'
 import { case02 } from './data/case02'
 import { defaultProgress, emptyCaseProgress, resetProgress, useProgress } from './lib/storage'
+import { addReviewForLessons, applySkillOutcome, applyStepResults, dueReview, emptySkill, scheduleReview } from './lib/skills'
 import { Layout } from './components/Layout'
 import { GlossaryProvider } from './components/GlossaryProvider'
+import { ReviewSession, type ReviewOutcome } from './components/ReviewSession'
 import { Home } from './screens/Home'
 import { Tutorial } from './screens/Tutorial'
 import { Debrief } from './screens/Debrief'
@@ -21,6 +23,7 @@ export default function App() {
   const [mode, setMode] = useState<Mode>('tutorial')
   const [activeCaseId, setActiveCaseId] = useState(() => progress.lastCaseId || case01.id)
   const [result, setResult] = useState<TutorialResult | null>(null)
+  const [reviewOpen, setReviewOpen] = useState(false)
 
   const activeCase = CASES.find((item) => item.id === activeCaseId) ?? case01
 
@@ -61,6 +64,12 @@ export default function App() {
       return {
         ...prev,
         cases: { ...prev.cases, [nextResult.caseId]: nextCase },
+        skills: applyStepResults(
+          prev.skills,
+          nextResult.stepResults,
+          nextResult.mode === 'exam' ? 1.2 : 1,
+        ),
+        review: addReviewForLessons(prev.review, nextResult.errors),
         lastCaseId: nextResult.caseId,
         lastMode: nextResult.mode,
         updatedAt: now,
@@ -74,7 +83,34 @@ export default function App() {
     setProgress(defaultProgress)
     setResult(null)
     setActiveCaseId(case01.id)
+    setReviewOpen(false)
     setScreen('home')
+  }
+
+  const completeReview = (outcomes: ReviewOutcome[]) => {
+    const now = new Date().toISOString()
+    setProgress((prev) => {
+      const review = [...prev.review]
+      const skills = { ...prev.skills }
+      for (const outcome of outcomes) {
+        const index = review.findIndex((item) => item.lessonId === outcome.item.lessonId)
+        const scheduled = scheduleReview(
+          outcome.item,
+          outcome.item.lessonId,
+          outcome.item.skillId,
+          outcome.correct,
+        )
+        if (index >= 0) review[index] = scheduled
+        else review.push(scheduled)
+        skills[outcome.item.skillId] = applySkillOutcome(
+          skills[outcome.item.skillId] ?? emptySkill(),
+          outcome.correct,
+          0.8,
+        )
+      }
+      return { ...prev, review, skills, updatedAt: now }
+    })
+    setReviewOpen(false)
   }
 
   const renderScreen = () => {
@@ -112,7 +148,7 @@ export default function App() {
     }
 
     if (screen === 'progress') {
-      return <Progress progress={progress} activeCase={activeCase} onReset={reset} />
+      return <Progress progress={progress} activeCase={activeCase} onReview={() => setReviewOpen(true)} onReset={reset} />
     }
 
     if (screen === 'about') {
@@ -127,6 +163,8 @@ export default function App() {
         onExam={() => start('exam', activeCase.id)}
         onCases={() => setScreen('cases')}
         onTheory={() => setScreen('theory')}
+        onProgress={() => setScreen('progress')}
+        onReview={() => setReviewOpen(true)}
         onAbout={() => setScreen('about')}
       />
     )
@@ -137,6 +175,12 @@ export default function App() {
       <Layout screen={screen} onNavigate={setScreen} hideNav={screen === 'tutorial'} hideTopbar={screen === 'tutorial'}>
         {renderScreen()}
       </Layout>
+      <ReviewSession
+        open={reviewOpen}
+        items={dueReview(progress)}
+        onClose={() => setReviewOpen(false)}
+        onComplete={completeReview}
+      />
     </GlossaryProvider>
   )
 }

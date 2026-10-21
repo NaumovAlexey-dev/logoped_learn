@@ -24,7 +24,7 @@ await page.getByRole('button', { name: 'Закрыть' }).click()
 await page.waitForTimeout(200)
 
 await page.getByRole('button', { name: 'Приём', exact: true }).click()
-await page.getByRole('button', { name: /Начать первый приём/ }).click()
+await page.getByRole('button', { name: /Начать обучение/ }).click()
 await page.waitForTimeout(300)
 await page.getByRole('button', { name: 'Шпаргалка', exact: true }).click()
 await page.waitForTimeout(300)

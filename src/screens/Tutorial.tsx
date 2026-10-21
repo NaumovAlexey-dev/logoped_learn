@@ -59,6 +59,7 @@ type Answers = {
   icd11?: string
   argsFor?: string[]
   argAgainst?: string
+  confidence?: number
 }
 
 type CheckResult = { ok: boolean; lessonId?: string; message: string }
@@ -94,6 +95,8 @@ export function Tutorial({
   const [showCheatSheet, setShowCheatSheet] = useState(false)
   const [firstTryChecks, setFirstTryChecks] = useState(0)
   const [errors, setErrors] = useState<string[]>([])
+  const [attemptsCount, setAttemptsCount] = useState(0)
+  const [stepResults, setStepResults] = useState<TutorialResult['stepResults']>([])
   const [finished, setFinished] = useState(false)
   const startedAt = useRef(new Date())
   const { open: openGlossary } = useGlossary()
@@ -117,6 +120,7 @@ export function Tutorial({
     const result = check()
     if (!result.ok) {
       setAttempted(true)
+      setAttemptsCount((value) => value + 1)
       setStepError(result.message)
       if (result.lessonId) {
         setErrors((prev) => (prev.includes(result.lessonId!) ? prev : [...prev, result.lessonId!]))
@@ -126,6 +130,14 @@ export function Tutorial({
     }
 
     if (!attempted) setFirstTryChecks((value) => value + 1)
+    setStepResults((prev) => [
+      ...prev,
+      {
+        step: stepIndex,
+        firstTry: !attempted,
+        attempts: attemptsCount + 1,
+      },
+    ])
     setPassed(true)
     setStepError(null)
   }
@@ -141,6 +153,8 @@ export function Tutorial({
         firstTryChecks,
         totalChecks: TOTAL_STEPS,
         errors,
+        confidence: answers.confidence ?? 75,
+        stepResults,
         startedAt: startedAt.current.toISOString(),
         completedAt: new Date().toISOString(),
         durationSec: Math.max(1, Math.round((Date.now() - startedAt.current.getTime()) / 1000)),
@@ -151,6 +165,7 @@ export function Tutorial({
     setStepIndex((index) => index + 1)
     setPassed(false)
     setAttempted(false)
+    setAttemptsCount(0)
     setStepError(null)
     setShowHint(false)
   }
@@ -987,6 +1002,30 @@ function ConclusionStep({
               <span>{argument.text}</span>
             </button>
           ))}
+        </div>
+      </Card>
+
+      <Card className="confidence-card">
+        <div className="confidence-card__head">
+          <div>
+            <h3 className="card-title">Насколько уверен в заключении?</h3>
+            <p>Честная оценка важнее высокой: она нужна для калибровки.</p>
+          </div>
+          <strong>{answers.confidence ?? 75}%</strong>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={answers.confidence ?? 75}
+          onChange={(event) => update({ confidence: Number(event.target.value) })}
+          disabled={passed}
+          aria-label="Уверенность в заключении"
+        />
+        <div className="confidence-card__scale">
+          <span>Совсем не уверен</span>
+          <span>Полностью уверен</span>
         </div>
       </Card>
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { CaseProgress, Progress } from '../types'
+import { emptySkills } from './skills'
 
 const KEY = 'priem.progress.v1'
 
@@ -14,6 +15,8 @@ export const emptyCaseProgress: CaseProgress = {
 
 export const defaultProgress: Progress = {
   cases: {},
+  skills: emptySkills(),
+  review: [],
   lastCaseId: 'dislalia-01',
   lastMode: null,
   updatedAt: null,
@@ -30,9 +33,14 @@ export function loadProgress(): Progress {
     const parsed = JSON.parse(raw) as Record<string, unknown>
 
     if (parsed.cases && typeof parsed.cases === 'object') {
-      return {
+      const merged = {
         ...defaultProgress,
         ...(parsed as unknown as Progress),
+      }
+      return {
+        ...merged,
+        skills: { ...emptySkills(), ...(merged.skills ?? {}) },
+        review: Array.isArray(merged.review) ? merged.review : [],
       }
     }
 
@@ -49,6 +57,8 @@ export function loadProgress(): Progress {
       }
       return {
         cases: { 'dislalia-01': legacy },
+        skills: emptySkills(),
+        review: [],
         lastCaseId: 'dislalia-01',
         lastMode: (parsed.lastMode as Progress['lastMode']) ?? null,
         updatedAt: legacy.updatedAt,

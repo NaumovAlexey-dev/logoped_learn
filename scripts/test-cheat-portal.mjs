@@ -5,7 +5,7 @@ const errors = []
 page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()) })
 page.on('pageerror', (err) => errors.push('PAGEERROR: ' + err.message))
 await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' })
-await page.getByRole('button', { name: /Начать первый приём/ }).click()
+await page.getByRole('button', { name: /Начать обучение/ }).click()
 await page.waitForTimeout(600)
 await page.getByRole('button', { name: 'Шпаргалка', exact: true }).click()
 await page.waitForTimeout(400)
