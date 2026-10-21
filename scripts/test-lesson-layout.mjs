@@ -4,7 +4,7 @@ const page = await browser.newPage({ viewport: { width: 390, height: 844 }, devi
 await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' })
 await page.evaluate(() => localStorage.clear())
 await page.reload({ waitUntil: 'networkidle' })
-await page.getByRole('button', { name: /Начать первый приём/ }).click()
+await page.getByRole('button', { name: /Начать обучение/ }).click()
 await page.locator('.choice').filter({ hasText: 'Стёртая дизартрия' }).click()
 await page.locator('.action-bar .btn').click()
 await page.waitForTimeout(350)

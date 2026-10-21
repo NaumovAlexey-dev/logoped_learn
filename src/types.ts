@@ -2,6 +2,37 @@ export type Screen = 'home' | 'tutorial' | 'debrief' | 'cases' | 'theory' | 'pro
 
 export type Mode = 'tutorial' | 'exam'
 
+export type SkillId =
+  | 'anamnesis'
+  | 'sounds'
+  | 'phonemics'
+  | 'grammar'
+  | 'articulation'
+  | 'conclusion'
+  | 'ethics'
+
+export interface SkillProgress {
+  mastery: number
+  attempts: number
+  correct: number
+  lastPracticed: string | null
+}
+
+export interface ReviewItem {
+  lessonId: string
+  skillId: SkillId
+  dueAt: string
+  intervalDays: number
+  lastReviewedAt: string | null
+  lastResult: 'correct' | 'wrong' | null
+}
+
+export interface StepResult {
+  step: number
+  firstTry: boolean
+  attempts: number
+}
+
 export type StepId =
   | 'hypotheses'
   | 'anamnesis'
@@ -152,6 +183,8 @@ export interface TutorialResult {
   firstTryChecks: number
   totalChecks: number
   errors: string[]
+  confidence: number
+  stepResults: StepResult[]
   startedAt: string
   completedAt: string
   durationSec: number
@@ -168,6 +201,8 @@ export interface CaseProgress {
 
 export interface Progress {
   cases: Record<string, CaseProgress>
+  skills: Record<SkillId, SkillProgress>
+  review: ReviewItem[]
   lastCaseId: string
   lastMode: Mode | null
   updatedAt: string | null

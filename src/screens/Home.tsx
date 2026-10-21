@@ -1,5 +1,7 @@
 import type { CaseData, Progress } from '../types'
 import { getCaseProgress } from '../lib/storage'
+import { dueReview, nextReviewDate } from '../lib/skills'
+import { SkillMap } from '../components/SkillMap'
 import { Badge, Button, Card, ProgressBar } from '../components/ui'
 import { Icon } from '../components/Icon'
 
@@ -10,6 +12,8 @@ export function Home({
   onExam,
   onCases,
   onTheory,
+  onProgress,
+  onReview,
   onAbout,
 }: {
   progress: Progress
@@ -18,11 +22,16 @@ export function Home({
   onExam: () => void
   onCases: () => void
   onTheory: () => void
+  onProgress: () => void
+  onReview: () => void
   onAbout: () => void
 }) {
   const caseProgress = getCaseProgress(progress, activeCase.id)
   const hasTutorial = caseProgress.tutorialCompleted
   const hasExam = caseProgress.examPassed
+  const due = dueReview(progress)
+  const nextReview = nextReviewDate(progress.review)
+  const hasSkills = Object.values(progress.skills).some((skill) => skill.attempts > 0)
 
   return (
     <div className="screen home">
@@ -82,6 +91,51 @@ export function Home({
               ? 'Следующий шаг — открыть библиотеку и выбрать следующий кейс.'
               : `Проверки с первой попытки: ${caseProgress.tutorialFirstTry} из 6. Зачёт откроется после обучения.`}
           </p>
+        </Card>
+      )}
+
+      {(due.length > 0 || nextReview) && (
+        <Card className={`review-card ${due.length > 0 ? 'is-due' : ''}`}>
+          <div className="review-card__head">
+            <div>
+              <Badge tone={due.length > 0 ? 'warning' : 'success'}>
+                {due.length > 0 ? 'повторение' : 'повторение закрыто'}
+              </Badge>
+              <h2>
+                {due.length > 0
+                  ? `${due.length} ${due.length === 1 ? 'тема' : 'темы'} к повторению`
+                  : 'На сегодня всё повторено'}
+              </h2>
+            </div>
+            <Icon name={due.length > 0 ? 'spark' : 'check'} size={26} />
+          </div>
+          <p>
+            {due.length > 0
+              ? '3–5 минут: вопросы из микро-уроков, которые стоит закрепить.'
+              : nextReview
+                ? `Следующее повторение: ${new Date(nextReview).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}.`
+                : 'Ошибки появятся здесь после первого приёма.'}
+          </p>
+          {due.length > 0 && (
+            <Button onClick={onReview} full>
+              Повторить <Icon name="arrow" size={18} />
+            </Button>
+          )}
+        </Card>
+      )}
+
+      {hasSkills && (
+        <Card className="skill-card">
+          <div className="skill-card__head">
+            <div>
+              <Badge tone="info">карта навыков</Badge>
+              <h2>Что уже получается</h2>
+            </div>
+            <Button variant="ghost" onClick={onProgress}>
+              Все навыки
+            </Button>
+          </div>
+          <SkillMap skills={progress.skills} compact />
         </Card>
       )}
 

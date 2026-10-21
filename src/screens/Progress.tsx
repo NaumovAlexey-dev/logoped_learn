@@ -1,17 +1,10 @@
 import { useState } from 'react'
 import type { CaseData, CaseProgress, Progress as ProgressType } from '../types'
 import { getCaseProgress } from '../lib/storage'
+import { dueReview, nextReviewDate } from '../lib/skills'
+import { SkillMap } from '../components/SkillMap'
 import { Badge, Button, Card, ProgressBar } from '../components/ui'
 import { Icon } from '../components/Icon'
-
-const SKILLS = [
-  { title: 'Анамнез', lessons: ['M2', 'M3'], note: 'Критические вопросы и шум' },
-  { title: 'Звуки', lessons: ['M4'], note: 'Искажение, замена, пропуск' },
-  { title: 'Фонематика', lessons: ['M5'], note: 'Различение оппозиций' },
-  { title: 'Грамматика', lessons: ['M7'], note: 'Сохранный строй' },
-  { title: 'Артикуляция', lessons: ['M6'], note: 'Микрознаки дизартрии' },
-  { title: 'Заключение', lessons: ['M8', 'M9'], note: 'Формула и аргументы' },
-]
 
 const BADGES = [
   { id: 'first', title: 'Кейс освоен', note: 'Обучение завершено', icon: 'user' as const, need: (p: CaseProgress) => p.tutorialCompleted },
@@ -24,15 +17,19 @@ const BADGES = [
 export function Progress({
   progress,
   activeCase,
+  onReview,
   onReset,
 }: {
   progress: ProgressType
   activeCase: CaseData
+  onReview: () => void
   onReset: () => void
 }) {
   const [confirming, setConfirming] = useState(false)
   const caseProgress = getCaseProgress(progress, activeCase.id)
   const started = caseProgress.tutorialCompleted
+  const due = dueReview(progress)
+  const nextDate = nextReviewDate(progress.review)
   const percent = caseProgress.examPassed
     ? caseProgress.bestExamScore
     : started
@@ -87,24 +84,46 @@ export function Progress({
 
       <section className="section">
         <div className="section__head">
-          <h2>Навыки</h2>
-          <span className="section__hint">по шагам обучения</span>
+          <h2>Карта навыков</h2>
+          <span className="section__hint">mastery по 7 навыкам</span>
         </div>
-        <div className="skill-list">
-          {SKILLS.map((skill) => {
-            const hadLesson = skill.lessons.some((id) => caseProgress.tutorialErrors.includes(id))
-            const status = !started ? 'не начато' : hadLesson ? 'повторить' : 'освоено'
-            return (
-              <div className="skill" key={skill.title}>
-                <div className="skill__text">
-                  <strong>{skill.title}</strong>
-                  <span>{skill.note}</span>
-                </div>
-                <Badge tone={!started ? 'neutral' : hadLesson ? 'warning' : 'success'}>{status}</Badge>
-              </div>
-            )
-          })}
+        <Card className="skill-map-card">
+          <SkillMap skills={progress.skills} />
+        </Card>
+      </section>
+
+      <section className="section">
+        <div className="section__head">
+          <h2>Повторение</h2>
+          <span className="section__hint">1 / 3 / 7 / 14 дней</span>
         </div>
+        <Card className="review-stat">
+          <div className="review-stat__grid">
+            <div>
+              <strong>{due.length}</strong>
+              <span>к повторению</span>
+            </div>
+            <div>
+              <strong>{progress.review.length}</strong>
+              <span>в очереди</span>
+            </div>
+            <div>
+              <strong>{nextDate ? new Date(nextDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : '—'}</strong>
+              <span>следующее</span>
+            </div>
+          </div>
+          {due.length > 0 ? (
+            <Button onClick={onReview} full>
+              Повторить {due.length} {due.length === 1 ? 'тему' : 'темы'}
+            </Button>
+          ) : (
+            <p className="muted">
+              {nextDate
+                ? 'На сегодня очередь пуста. Следующее повторение придёт по расписанию.'
+                : 'Пока нет тем для повторения — они появятся после ошибок в приёме.'}
+            </p>
+          )}
+        </Card>
       </section>
 
       <section className="section">

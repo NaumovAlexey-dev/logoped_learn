@@ -12,7 +12,7 @@ await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' })
 await page.screenshot({ path: 'shots/01-home-mobile.png', fullPage: true })
 console.log('home title:', await page.locator('h1').first().innerText())
 
-await page.getByRole('button', { name: /Начать первый приём/ }).click()
+await page.getByRole('button', { name: /Начать обучение/ }).click()
 await page.waitForTimeout(300)
 await page.screenshot({ path: 'shots/02-step-1.png', fullPage: true })
 

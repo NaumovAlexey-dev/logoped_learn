@@ -31,6 +31,27 @@ export function Debrief({
   const passed = score >= 75
   const minutes = Math.max(1, Math.round(result.durationSec / 60))
   const uniqueErrors = Array.from(new Set(result.errors))
+  const accuracy = Math.round((result.firstTryChecks / result.totalChecks) * 100)
+  const confidence = result.confidence ?? 60
+  const gap = confidence - accuracy
+  const calibrationLabel = Math.abs(gap) <= 25 ? 'Калибровка в норме' : gap > 0 ? 'Переоценка' : 'Недооценка'
+  const calibrationMessage =
+    Math.abs(gap) <= 25
+      ? 'Ты примерно понимаешь, где твёрд, а где сомневаешься. Это рабочая калибровка.'
+      : gap > 0
+        ? 'Уверенность выше точности. Проверяй альтернативу и аргументы «против», а не только «за».'
+        : 'Ты знаешь больше, чем думаешь. Опирайся на пробы и фиксируй их в карте.'
+
+  const conclusionStep = result.stepResults.find((step) => step.step === 5)
+  const diagnosisScore = isExam ? (passed ? 35 : 0) : conclusionStep?.firstTry ? 35 : 30
+  const completenessScore = Math.round((result.firstTryChecks / result.totalChecks) * 30)
+  const justificationScore = conclusionStep
+    ? conclusionStep.firstTry
+      ? 25
+      : 18
+    : Math.round((result.firstTryChecks / result.totalChecks) * 25)
+  const efficiencyScore = Math.max(0, 10 - uniqueErrors.length * 2)
+  const rubricTotal = diagnosisScore + completenessScore + justificationScore + efficiencyScore
 
   return (
     <div className="screen debrief">
@@ -83,6 +104,57 @@ export function Debrief({
           label={isExam ? 'Итог зачёта' : 'Шаги с первой попытки'}
         />
       </Card>
+
+      <Card className="calibration-card">
+        <div className="calibration-card__head">
+          <div>
+            <Badge tone={Math.abs(gap) <= 25 ? 'success' : 'warning'}>{calibrationLabel}</Badge>
+            <h2>
+              {confidence}% уверенности · {accuracy}% точности
+            </h2>
+          </div>
+          <span className="calibration-gap">
+            {gap > 0 ? '+' : ''}
+            {gap}%
+          </span>
+        </div>
+        <div className="calibration-row">
+          <span>Уверенность</span>
+          <div className="calibration-track">
+            <i style={{ width: `${confidence}%` }} />
+          </div>
+          <strong>{confidence}%</strong>
+        </div>
+        <div className="calibration-row">
+          <span>Точность</span>
+          <div className="calibration-track calibration-track--accuracy">
+            <i style={{ width: `${accuracy}%` }} />
+          </div>
+          <strong>{accuracy}%</strong>
+        </div>
+        <p>{calibrationMessage}</p>
+      </Card>
+
+      <section className="section">
+        <div className="section__head">
+          <h2>Рубрика</h2>
+          <span className="section__hint">профиль по критериям</span>
+        </div>
+        <Card className="rubric-card">
+          <RubricRow label="Точность заключения" value={diagnosisScore} max={35} />
+          <RubricRow label="Полнота обследования" value={completenessScore} max={30} />
+          <RubricRow label="Корректность обоснования" value={justificationScore} max={25} />
+          <RubricRow label="Эффективность" value={efficiencyScore} max={10} />
+          <div className="rubric-total">
+            <strong>{rubricTotal}</strong>
+            <span>из 100</span>
+          </div>
+          <p className="rubric-note">
+            Это профиль по данным прототипа. Итоговый балл зачёта считается отдельно — по первому
+            прохождению и порогу 75.
+          </p>
+        </Card>
+      </section>
 
       <section className="section">
         <div className="section__head">
@@ -188,6 +260,24 @@ export function Debrief({
       <p className="fineprint">
         Это учебное заключение. Оно не заменяет клиническую диагностику и супервизию.
       </p>
+    </div>
+  )
+}
+
+
+function RubricRow({ label, value, max }: { label: string; value: number; max: number }) {
+  const percent = Math.round((value / max) * 100)
+  return (
+    <div className="rubric-row">
+      <div className="rubric-row__head">
+        <span>{label}</span>
+        <strong>
+          {value} / {max}
+        </strong>
+      </div>
+      <div className="rubric-row__track">
+        <i style={{ width: `${percent}%` }} />
+      </div>
     </div>
   )
 }
