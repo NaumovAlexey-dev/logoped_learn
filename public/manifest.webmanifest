@@ -1,0 +1,20 @@
+{
+  "name": "Приём — симулятор логопедического обследования",
+  "short_name": "Приём",
+  "description": "Учебный тренажёр алгоритма логопедического обследования и дифференциальной диагностики.",
+  "lang": "ru",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F7F9FB",
+  "theme_color": "#2F6F8F",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

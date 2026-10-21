@@ -1,0 +1,18 @@
+import { chromium } from 'playwright'
+const browser = await chromium.launch()
+const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
+const errors = []
+page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()) })
+page.on('pageerror', (err) => errors.push('PAGEERROR: ' + err.message))
+await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' })
+await page.getByRole('button', { name: /Начать первый приём/ }).click()
+await page.waitForTimeout(600)
+await page.getByRole('button', { name: 'Шпаргалка', exact: true }).click()
+await page.waitForTimeout(400)
+const modalBox = await page.locator('.modal').boundingBox()
+console.log('modal box:', modalBox)
+await page.screenshot({ path: 'shots/24-cheat-portal.png', fullPage: false })
+await page.getByRole('button', { name: 'Закрыть', exact: true }).click()
+await page.getByRole('button', { name: 'Теория', exact: true }).click().catch(() => {})
+console.log('errors:', errors.length ? errors : 'none')
+await browser.close()

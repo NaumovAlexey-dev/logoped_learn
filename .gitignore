@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.pw-browsers/
+.npm-cache/
+.bin/
+shots/
+*.log
+.DS_Store
+.env
+.env.*
+*.zip
+priem-standalone.html
+single/
+.home/
+github-pages/

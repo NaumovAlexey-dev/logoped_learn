@@ -1,0 +1,13 @@
+import { chromium } from 'playwright'
+const browser = await chromium.launch()
+const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
+await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' })
+await page.getByRole('button', { name: /Начать обучение/ }).click()
+await page.waitForTimeout(500)
+const mentorButtons = await page.locator('.mentor__actions button').allInnerTexts()
+console.log('mentor buttons:', mentorButtons)
+await page.getByRole('button', { name: 'Словарь', exact: true }).click()
+await page.waitForTimeout(300)
+console.log('modal:', await page.getByRole('heading', { name: 'Словарь терминов' }).isVisible())
+await page.screenshot({ path: 'shots/41-glossary-tutorial.png', fullPage: false })
+await browser.close()
